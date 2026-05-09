@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="theme-color" content="#0a1f10">
+<title>TomatoScan — Deteksi Penyakit Daun Tomat</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;600;700;800&family=Instrument+Sans:ital,wght@0,400;0,500;0,600;1,400&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root {
+  --ink:        #0a1f10;
+  --ink-mid:    #16331e;
+  --ink-light:  #1f4728;
+  --sage:       #3a7d52;
+  --leaf:       #52b07a;
+  --mint:       #8ed4a8;
+  --pale:       #d8f0e4;
+  --cream:      #f5f0e8;
+  --paper:      #faf8f4;
+  --tomato:     #c23b2a;
+  --tomato-lt:  #e85444;
+  --gold:       #dfa832;
+  --gray:       #6b7c72;
+  --border:     rgba(82,176,122,0.18);
+  --glow:       rgba(82,176,122,0.12);
+  --r:          14px;
+  --r-sm:       8px;
+  --shadow:     0 8px 40px rgba(10,31,16,0.25);
+}
+
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+
+body {
+  font-family:'Instrument Sans',sans-serif;
+  background:var(--ink);
+  color:var(--cream);
+  min-height:100vh;
+  overflow-x:hidden;
+}
+
+/* ── Background ── */
+body::before {
+  content:'';position:fixed;inset:0;
+  background:
+    radial-gradient(ellipse 60% 50% at 15% 10%, rgba(58,125,82,0.18) 0%, transparent 60%),
+    radial-gradient(ellipse 40% 60% at 85% 90%, rgba(22,51,30,0.6) 0%, transparent 50%),
+    repeating-linear-gradient(0deg, transparent, transparent 80px, rgba(82,176,122,0.02) 80px, rgba(82,176,122,0.02) 81px),
+    repeating-linear-gradient(90deg, transparent, transparent 80px, rgba(82,176,122,0.02) 80px, rgba(82,176,122,0.02) 81px);
+  pointer-events:none;z-index:0;
+}
+
+/* ── Nav ── */
+nav {
+  position:sticky;top:0;z-index:100;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 28px;height:60px;
+  background:rgba(10,31,16,0.88);
+  backdrop-filter:blur(20px);
+  border-bottom:1px solid var(--border);
+}
+.logo {
+  font-family:'Syne',sans-serif;
+  font-size:20px;font-weight:800;
+  letter-spacing:-0.03em;color:var(--mint);
+  display:flex;align-items:center;gap:8px;
+}
+.logo-dot{color:var(--tomato)}
+.nav-tag {
+  font-family:'JetBrains Mono',monospace;
+  font-size:10px;color:var(--sage);
+  border:1px solid var(--border);
+  padding:3px 10px;border-radius:20px;
+  letter-spacing:.06em;
+}
+
+/* ── Layout ── */
+.page {position:relative;z-index:1;max-width:900px;margin:0 auto;padding:0 16px 80px}
+
+/* ── Hero ── */
+.hero {
+  text-align:center;padding:56px 20px 40px;
+}
+.hero-kicker {
+  display:inline-flex;align-items:center;gap:6px;
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  color:var(--leaf);letter-spacing:.1em;text-transform:uppercase;
+  background:rgba(82,176,122,0.1);
+  border:1px solid rgba(82,176,122,0.22);
+  padding:5px 14px;border-radius:20px;margin-bottom:22px;
+}
+.hero h1 {
+  font-family:'Syne',sans-serif;
+  font-size:clamp(32px,7vw,64px);
+  font-weight:800;line-height:1.05;
+  letter-spacing:-0.04em;
+  margin-bottom:16px;
+}
+.hero h1 span{color:var(--leaf)}
+.hero p{font-size:15px;color:var(--gray);max-width:480px;margin:0 auto 24px;line-height:1.7}
+.model-chips{display:flex;justify-content:center;gap:8px;flex-wrap:wrap}
+.chip {
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:4px 12px;border-radius:20px;border:1px solid;
+}
+.chip-r{border-color:rgba(82,176,122,.4);color:var(--leaf);background:rgba(82,176,122,.08)}
+.chip-m{border-color:rgba(223,168,50,.4);color:var(--gold);background:rgba(223,168,50,.08)}
+
+/* ── API config bar ── */
+.api-bar {
+  background:rgba(22,51,30,0.7);
+  border:1px solid var(--border);
+  border-radius:var(--r-sm);
+  padding:12px 16px;
+  margin-bottom:16px;
+  display:flex;align-items:center;gap:10px;flex-wrap:wrap;
+}
+.api-bar label{font-size:12px;color:var(--gray);white-space:nowrap;font-family:'JetBrains Mono',monospace}
+.api-input {
+  flex:1;min-width:200px;
+  background:rgba(10,31,16,.6);
+  border:1px solid var(--border);
+  border-radius:6px;
+  padding:7px 12px;
+  color:var(--cream);
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  outline:none;
+}
+.api-input:focus{border-color:var(--sage)}
+.api-input::placeholder{color:var(--gray)}
+.api-status{
+  font-family:'JetBrains Mono',monospace;font-size:11px;
+  padding:4px 10px;border-radius:4px;white-space:nowrap;
+}
+.api-status.off{background:rgba(107,124,114,.15);color:var(--gray)}
+.api-status.on{background:rgba(82,176,122,.15);color:var(--leaf)}
+
+/* ── Main card ── */
+.card {
+  background:rgba(22,51,30,0.5);
+  border:1px solid var(--border);
+  border-radius:var(--r);
+  overflow:hidden;
+  box-shadow:var(--shadow);
+}
+
+/* ── Model selector ── */
+.model-row {
+  display:flex;align-items:center;gap:12px;padding:16px 20px;
+  border-bottom:1px solid var(--border);flex-wrap:wrap;
+}
+.model-row label{font-size:13px;color:var(--gray);font-weight:500}
+.model-tabs{display:flex;gap:6px}
+.m-tab {
+  font-family:'JetBrains Mono',monospace;font-size:12px;
+  padding:6px 16px;border-radius:6px;
+  border:1px solid rgba(255,255,255,.1);
+  background:transparent;color:var(--gray);
+  cursor:pointer;transition:all .2s;
+}
+.m-tab:hover{border-color:var(--border);color:var(--cream)}
+.m-tab.act-r{background:rgba(82,176,122,.2);border-color:var(--leaf);color:var(--leaf);font-weight:500}
+.m-tab.act-m{background:rgba(223,168,50,.15);border-color:var(--gold);color:var(--gold);font-weight:500}
+.model-active-label{margin-left:auto;font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray)}
+#active-lbl{color:var(--leaf)}
+
+/* ── Drop zone ── */
+.dropzone {
+  position:relative;
+  min-height:320px;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+  cursor:pointer;
+  border-bottom:1px solid var(--border);
+  transition:background .3s;
+  overflow:hidden;
+}
+.dropzone:hover,.dropzone.drag{background:rgba(58,125,82,.1)}
+.dropzone.has-img{cursor:default;min-height:260px}
+
+.corner-frame{position:absolute;inset:16px;pointer-events:none}
+.corner-frame::before,.corner-frame::after,
+.corner-frame > span::before,.corner-frame > span::after {
+  content:'';position:absolute;width:20px;height:20px;border-color:var(--sage);border-style:solid;
+}
+.corner-frame::before{top:0;left:0;border-width:2px 0 0 2px;border-radius:4px 0 0 0}
+.corner-frame::after{top:0;right:0;border-width:2px 2px 0 0;border-radius:0 4px 0 0}
+.corner-frame > span::before{bottom:0;left:0;border-width:0 0 2px 2px;border-radius:0 0 0 4px}
+.corner-frame > span::after{bottom:0;right:0;border-width:0 2px 2px 0;border-radius:0 0 4px 0}
+
+.dz-icon{
+  width:72px;height:72px;border-radius:50%;
+  background:rgba(58,125,82,.18);
+  border:2px dashed rgba(82,176,122,.35);
+  display:flex;align-items:center;justify-content:center;
+  font-size:28px;margin-bottom:18px;
+  transition:all .3s;
+}
+.dropzone:hover .dz-icon{background:rgba(58,125,82,.3);transform:scale(1.06)}
+.dz-title{font-family:'Syne',sans-serif;font-size:20px;font-weight:700;margin-bottom:6px}
+.dz-sub{font-size:13px;color:var(--gray);margin-bottom:4px}
+.dz-fmt{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--sage)}
+
+#prev-img{
+  max-width:100%;max-height:380px;
+  object-fit:contain;padding:16px;
+  display:none;animation:fadeIn .4s ease;
+}
+@keyframes fadeIn{from{opacity:0;transform:scale(.97)}to{opacity:1;transform:scale(1)}}
+
+/* ── Buttons ── */
+.btn-row {
+  display:grid;grid-template-columns:1fr 1fr 1fr;
+  gap:10px;padding:16px;
+  border-bottom:1px solid var(--border);
+}
+.btn {
+  display:flex;align-items:center;justify-content:center;
+  gap:7px;padding:12px 10px;border-radius:var(--r-sm);
+  border:none;cursor:pointer;
+  font-family:'Instrument Sans',sans-serif;font-size:14px;font-weight:600;
+  transition:all .2s;letter-spacing:.01em;
+}
+.btn svg{width:17px;height:17px;flex-shrink:0}
+.btn-cam{background:var(--sage);color:#fff}
+.btn-cam:hover{background:var(--leaf);transform:translateY(-1px)}
+.btn-gal{background:rgba(58,125,82,.2);border:1px solid rgba(82,176,122,.3);color:var(--mint)}
+.btn-gal:hover{background:rgba(58,125,82,.35);transform:translateY(-1px)}
+.btn-det{background:linear-gradient(135deg,var(--tomato),#9e2c1e);color:#fff}
+.btn-det:hover:not(:disabled){filter:brightness(1.12);transform:translateY(-1px);box-shadow:0 6px 20px rgba(194,59,42,.4)}
+.btn-det:disabled{background:rgba(255,255,255,.08);color:var(--gray);cursor:not-allowed;transform:none}
+
+@media(max-width:520px){
+  .btn-row{grid-template-columns:1fr 1fr}
+  .btn-det{grid-column:span 2}
+}
+
+/* ── Loading ── */
+.loading{display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;padding:40px}
+.loading.show{display:flex}
+.spin{width:44px;height:44px;border:3px solid rgba(82,176,122,.15);border-top-color:var(--leaf);border-radius:50%;animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.load-txt{font-family:'JetBrains Mono',monospace;font-size:13px;color:var(--sage)}
+.load-step{font-size:12px;color:var(--gray)}
+
+/* ── Result panel ── */
+.result{display:none;padding:24px;animation:fadeIn .5s ease}
+.result.show{display:block}
+
+.res-top{display:flex;align-items:flex-start;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap}
+.res-left{}
+.res-kicker{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sage);letter-spacing:.1em;text-transform:uppercase;margin-bottom:6px}
+.res-name{font-family:'Syne',sans-serif;font-size:28px;font-weight:800;letter-spacing:-0.03em;line-height:1.1;margin-bottom:4px}
+.res-name.healthy{color:var(--mint)}
+.res-name.disease{color:#f5a94a}
+.res-model{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray)}
+.res-right{text-align:right;flex-shrink:0}
+.res-pct{font-family:'Syne',sans-serif;font-size:48px;font-weight:800;line-height:1}
+.res-pct.hi{color:var(--mint)} .res-pct.md{color:var(--gold)} .res-pct.lo{color:var(--tomato-lt)}
+.res-conf-lbl{font-size:11px;color:var(--gray);margin-top:2px}
+
+.track{height:5px;background:rgba(255,255,255,.07);border-radius:3px;margin-bottom:20px;overflow:hidden}
+.fill{height:100%;border-radius:3px;transition:width 1s cubic-bezier(.4,0,.2,1)}
+
+.info-box{
+  background:rgba(10,31,16,.6);border:1px solid var(--border);
+  border-radius:var(--r-sm);padding:16px 18px;margin-bottom:22px;
+  font-size:14px;color:var(--gray);line-height:1.75;
+}
+.info-box strong{color:var(--cream)}
+
+.probs-title{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--gray);letter-spacing:.1em;text-transform:uppercase;margin-bottom:14px}
+.prob-row{display:flex;align-items:center;gap:10px;margin-bottom:9px}
+.prob-lbl{font-size:12px;color:var(--gray);width:196px;flex-shrink:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.prob-lbl.top{color:var(--cream);font-weight:600}
+.prob-track{flex:1;height:5px;background:rgba(255,255,255,.06);border-radius:3px;overflow:hidden}
+.prob-fill{height:100%;border-radius:3px;transition:width .7s cubic-bezier(.4,0,.2,1)}
+.prob-fill.top-bar{background:linear-gradient(90deg,var(--sage),var(--leaf))}
+.prob-fill.other{background:rgba(255,255,255,.18)}
+.prob-pct{font-family:'JetBrains Mono',monospace;font-size:11px;color:var(--gray);width:36px;text-align:right}
+.prob-pct.top{color:var(--mint)}
+
+.btn-reset{
+  display:inline-flex;align-items:center;gap:6px;margin-top:18px;
+  background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);
+  color:var(--gray);padding:8px 16px;border-radius:8px;
+  cursor:pointer;font-size:13px;transition:all .2s;
+}
+.btn-reset:hover{background:rgba(255,255,255,.1);color:var(--cream)}
+
+/* ── Camera overlay ── */
+.cam-overlay {
+  position:fixed;inset:0;z-index:200;
+  background:rgba(0,0,0,.95);
+  display:none;flex-direction:column;align-items:center;justify-content:center;gap:18px;
+  padding:20px;
+}
+.cam-overlay.open{display:flex}
+.cam-head{display:flex;align-items:center;justify-content:space-between;width:100%;max-width:600px}
+.cam-title{font-family:'Syne',sans-serif;font-size:19px;font-weight:700;color:#fff}
+.cam-close{
+  background:rgba(255,255,255,.1);border:none;color:#fff;
+  width:36px;height:36px;border-radius:50%;cursor:pointer;
+  font-size:18px;display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.cam-close:hover{background:rgba(255,255,255,.2)}
+.cam-wrap{position:relative;width:100%;max-width:600px}
+#cam-video{
+  width:100%;border-radius:12px;border:2px solid rgba(82,176,122,.35);
+  background:#000;aspect-ratio:4/3;object-fit:cover;display:block;
+}
+.cam-guide{
+  position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+  width:min(240px,65%);height:min(240px,65%);
+  border:2px dashed rgba(82,176,122,.55);border-radius:12px;
+  pointer-events:none;
+}
+.cam-guide::before,.cam-guide::after{
+  content:'';position:absolute;width:24px;height:24px;
+}
+.cam-actions{display:flex;align-items:center;gap:18px}
+.btn-snap{
+  width:66px;height:66px;border-radius:50%;
+  background:var(--tomato);border:4px solid rgba(255,255,255,.25);
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:.2s;animation:pulse 2s ease-in-out infinite;
+}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(194,59,42,.5)} 50%{box-shadow:0 0 0 14px rgba(194,59,42,0)}}
+.btn-snap:hover{transform:scale(1.08)}
+.btn-snap svg{width:26px;height:26px;fill:#fff}
+.btn-flip{
+  background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);
+  color:#fff;border-radius:50%;width:44px;height:44px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:.2s;
+}
+.btn-flip:hover{background:rgba(255,255,255,.2)}
+.cam-hint{font-family:'JetBrains Mono',monospace;font-size:11px;color:rgba(255,255,255,.35);letter-spacing:.04em}
+#snap-canvas{display:none}
+
+/* ── Classes grid ── */
+.section{margin-top:52px}
+.sec-kicker{font-family:'JetBrains Mono',monospace;font-size:10px;color:var(--sage);letter-spacing:.12em;text-transform:uppercase;margin-bottom:6px}
+.sec-title{font-family:'Syne',sans-serif;font-size:26px;font-weight:800;letter-spacing:-.03em;margin-bottom:20px}
+.cls-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(165px,1fr));gap:10px}
+.cls-card{
+  background:rgba(22,51,30,.5);border:1px solid var(--border);
+  border-radius:10px;padding:14px 15px;transition:all .2s;cursor:default;
+}
+.cls-card:hover{border-color:rgba(82,176,122,.35);background:rgba(22,51,30,.8);transform:translateY(-2px)}
+.cls-dot{width:7px;height:7px;border-radius:50%;margin-bottom:10px}
+.dot-h{background:var(--mint)} .dot-d{background:#f5a94a}
+.cls-name{font-size:13px;font-weight:600;color:var(--cream);line-height:1.3;margin-bottom:2px}
+.cls-sci{font-size:11px;color:var(--gray);font-style:italic}
+
+/* ── Footer ── */
+footer{
+  position:relative;z-index:1;
+  text-align:center;padding:36px 20px;
+  border-top:1px solid var(--border);
+  color:var(--gray);font-size:11px;
+  font-family:'JetBrains Mono',monospace;
+  letter-spacing:.04em;line-height:2.2;
+}
+
+input[type=file]{display:none}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="logo">🍅 Tomato<span class="logo-dot">Scan</span></div>
+  <span class="nav-tag">Transfer Learning · ResNet50 × MobileNetV2</span>
+</nav>
+
+<div class="page">
+
+  <!-- Hero -->
+  <div class="hero">
+    <div class="hero-kicker">🌿 Deep Learning Plant Diagnosis</div>
+    <h1>Deteksi Penyakit<br><span>Daun Tomat</span></h1>
+    <p>Foto daun tomat → AI mendeteksi 10 jenis penyakit secara otomatis menggunakan model transfer learning.</p>
+    <div class="model-chips">
+      <span class="chip chip-r">ResNet50 · 23.5M params</span>
+      <span class="chip chip-m">MobileNetV2 · 3.4M params</span>
+    </div>
+  </div>
+
+  <!-- API config -->
+  <div class="api-bar">
+    <label>API URL:</label>
+    <input class="api-input" id="api-url" type="text"
+           placeholder="https://xxxx-ngrok.io  (isi setelah server Colab jalan)"
+           oninput="updateApiStatus()">
+    <span class="api-status off" id="api-status">● DEMO MODE</span>
+  </div>
+
+  <!-- Main card -->
+  <div class="card">
+
+    <!-- Model selector -->
+    <div class="model-row">
+      <label>Model:</label>
+      <div class="model-tabs">
+        <button class="m-tab act-r" id="tab-r" onclick="setModel('resnet50')">ResNet50</button>
+        <button class="m-tab" id="tab-m" onclick="setModel('mobilenetv2')">MobileNetV2</button>
+      </div>
+      <span class="model-active-label">Aktif: <span id="active-lbl">ResNet50</span></span>
+    </div>
+
+    <!-- Drop zone -->
+    <div class="dropzone" id="dropzone"
+         onclick="dzClick(event)"
+         ondragover="dzDrag(event,true)"
+         ondragleave="dzDrag(event,false)"
+         ondrop="dzDrop(event)">
+      <div class="corner-frame"><span></span></div>
+
+      <div id="dz-ph">
+        <div class="dz-icon">🍃</div>
+        <div class="dz-title">Foto atau seret gambar</div>
+        <div class="dz-sub">Klik, seret, atau gunakan tombol di bawah</div>
+        <div class="dz-fmt">JPG · PNG · WEBP · HEIC</div>
+      </div>
+      <img id="prev-img" alt="Preview daun">
+    </div>
+
+    <!-- Buttons -->
+    <div class="btn-row">
+      <button class="btn btn-cam" onclick="openCam()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M23 19a2 2 0 0 1-2 2H3a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4l2-3h6l2 3h4a2 2 0 0 1 2 2z"/>
+          <circle cx="12" cy="13" r="4"/>
+        </svg> Ambil Foto
+      </button>
+      <button class="btn btn-gal" onclick="document.getElementById('file-in').click()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <rect x="3" y="3" width="18" height="18" rx="2"/>
+          <circle cx="8.5" cy="8.5" r="1.5"/>
+          <polyline points="21 15 16 10 5 21"/>
+        </svg> Galeri
+      </button>
+      <button class="btn btn-det" id="btn-det" onclick="detect()" disabled>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+        </svg> Deteksi
+      </button>
+    </div>
+
+    <!-- Loading -->
+    <div class="loading" id="loading">
+      <div class="spin"></div>
+      <div class="load-txt" id="load-txt">Memproses gambar...</div>
+      <div class="load-step" id="load-step">Menginisialisasi model</div>
+    </div>
+
+    <!-- Result -->
+    <div class="result" id="result">
+      <div class="res-top">
+        <div class="res-left">
+          <div class="res-kicker">🔬 Hasil Deteksi</div>
+          <div class="res-name" id="res-name">—</div>
+          <div class="res-model" id="res-model">—</div>
+        </div>
+        <div class="res-right">
+          <div class="res-pct" id="res-pct">—</div>
+          <div class="res-conf-lbl">Confidence</div>
+        </div>
+      </div>
+      <div class="track"><div class="fill" id="res-fill" style="width:0"></div></div>
+      <div class="info-box" id="res-info">—</div>
+      <div class="probs-title">Probabilitas per Kelas</div>
+      <div id="prob-list"></div>
+      <button class="btn-reset" onclick="reset()">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" width="14" height="14">
+          <polyline points="1 4 1 10 7 10"/><path d="M3.51 15a9 9 0 1 0 .49-3"/>
+        </svg> Scan ulang
+      </button>
+    </div>
+
+  </div><!-- /card -->
+
+  <!-- Classes grid -->
+  <div class="section">
+    <div class="sec-kicker">Database Penyakit</div>
+    <div class="sec-title">10 Kelas yang Dideteksi</div>
+    <div class="cls-grid">
+      <div class="cls-card"><div class="cls-dot dot-h"></div><div class="cls-name">Daun Sehat</div><div class="cls-sci">Healthy leaf</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Bercak Bakteri</div><div class="cls-sci">Bacterial Spot</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Hawar Awal</div><div class="cls-sci">Early Blight</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Hawar Akhir</div><div class="cls-sci">Late Blight</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Jamur Daun</div><div class="cls-sci">Leaf Mold</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Bercak Septoria</div><div class="cls-sci">Septoria Leaf Spot</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Tungau Laba-laba</div><div class="cls-sci">Spider Mites</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Bercak Target</div><div class="cls-sci">Target Spot</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Virus Kuning Keriting</div><div class="cls-sci">Yellow Leaf Curl Virus</div></div>
+      <div class="cls-card"><div class="cls-dot dot-d"></div><div class="cls-name">Virus Mosaik</div><div class="cls-sci">Tomato Mosaic Virus</div></div>
+    </div>
+  </div>
+
+</div><!-- /page -->
+
+<footer>
+  TomatoScan · Komparasi ResNet50 & MobileNetV2<br>
+  Klasifikasi Penyakit Daun Tomat Berbasis Transfer Learning<br>
+  <span style="color:rgba(255,255,255,.15)">New Plant Diseases Dataset · Kaggle</span>
+</footer>
+
+<!-- Camera overlay -->
+<div class="cam-overlay" id="cam-overlay">
+  <div class="cam-head">
+    <div class="cam-title">📷 Ambil Foto Daun</div>
+    <button class="cam-close" onclick="closeCam()">✕</button>
+  </div>
+  <div class="cam-wrap">
+    <video id="cam-video" autoplay playsinline muted></video>
+    <div class="cam-guide"></div>
+  </div>
+  <div class="cam-actions">
+    <button class="btn-flip" onclick="flipCam()" title="Ganti kamera">🔄</button>
+    <button class="btn-snap" onclick="snap()">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/></svg>
+    </button>
+    <div style="width:44px"></div>
+  </div>
+  <div class="cam-hint">Arahkan ke daun tomat · Pastikan cahaya cukup</div>
+  <canvas id="snap-canvas"></canvas>
+</div>
+
+<input type="file" id="file-in" accept="image/*" onchange="fileChosen(event)">
+
+<script>
+// ── State ─────────────────────────────────────────────────────
+let model   = 'resnet50';
+let stream  = null;
+let facing  = 'environment';
+let imgFile = null;
+let hasImg  = false;
+
+// ── Disease DB ────────────────────────────────────────────────
+const DB = [
+  { label:'Daun Sehat', healthy:true,
+    info:'<strong>Daun tomat dalam kondisi sehat.</strong> Tidak ditemukan tanda-tanda infeksi. Pertahankan dengan menjaga kelembaban tanah, sirkulasi udara yang baik, dan hindari percikan air langsung ke daun.' },
+  { label:'Bercak Bakteri', healthy:false,
+    info:'<strong>Bacterial Spot</strong> — <em>Xanthomonas</em> spp. Bercak kecil coklat gelap bertepi kuning. Buang daun terinfeksi, aplikasi bakterisida tembaga, hindari penyiraman overhead.' },
+  { label:'Hawar Awal', healthy:false,
+    info:'<strong>Early Blight</strong> — <em>Alternaria solani</em>. Bercak coklat dengan cincin konsentris. Gunakan fungisida klorotalonil, buang daun tua yang terinfeksi.' },
+  { label:'Hawar Akhir', healthy:false,
+    info:'<strong>Late Blight</strong> — <em>Phytophthora infestans</em>. Bercak basah keabu-abuan, sangat merusak. Fungisida sistemik (metalaksil), hindari kelembaban tinggi, rotasi tanaman.' },
+  { label:'Jamur Daun', healthy:false,
+    info:'<strong>Leaf Mold</strong> — <em>Passalora fulva</em>. Bercak kuning di atas, spora abu di bawah daun. Tingkatkan ventilasi, kurangi kelembaban, fungisida tembaga.' },
+  { label:'Bercak Septoria', healthy:false,
+    info:'<strong>Septoria Leaf Spot</strong> — <em>Septoria lycopersici</em>. Bercak bulat kecil pusat putih-abu tepi coklat. Fungisida protektif, hindari percikan tanah.' },
+  { label:'Tungau Laba-laba', healthy:false,
+    info:'<strong>Spider Mites</strong> — <em>Tetranychus urticae</em>. Daun berbintik kuning pucat, ada jaring halus. Akarisida, semprot air bertekanan, predator alami.' },
+  { label:'Bercak Target', healthy:false,
+    info:'<strong>Target Spot</strong> — <em>Corynespora cassiicola</em>. Bercak coklat pola cincin konsentris. Fungisida azoksistrobin, buang sisa tanaman terinfeksi.' },
+  { label:'Virus Kuning Keriting', healthy:false,
+    info:'<strong>Tomato Yellow Leaf Curl Virus (TYLCV)</strong>. Disebarkan kutu kebul. Daun menguning dan mengkerut. Kendalikan vektor dengan insektisida, gunakan varietas tahan.' },
+  { label:'Virus Mosaik', healthy:false,
+    info:'<strong>Tomato Mosaic Virus (ToMV)</strong>. Menular melalui kontak. Daun mosaik hijau-kuning. Cabut tanaman terinfeksi, sterilisasi alat, gunakan benih bersertifikat.' },
+];
+
+// ── API ───────────────────────────────────────────────────────
+function getApiUrl(){ return (document.getElementById('api-url').value||'').trim() }
+function updateApiStatus(){
+  const url = getApiUrl();
+  const el  = document.getElementById('api-status');
+  el.textContent = url ? '● LIVE API' : '● DEMO MODE';
+  el.className   = 'api-status ' + (url ? 'on' : 'off');
+}
+
+// ── Model selector ────────────────────────────────────────────
+function setModel(m){
+  model = m;
+  document.getElementById('tab-r').className = 'm-tab' + (m==='resnet50' ? ' act-r':'');
+  document.getElementById('tab-m').className = 'm-tab' + (m==='mobilenetv2' ? ' act-m':'');
+  document.getElementById('active-lbl').textContent = m==='resnet50' ? 'ResNet50':'MobileNetV2';
+  document.getElementById('active-lbl').style.color = m==='resnet50' ? 'var(--leaf)':'var(--gold)';
+}
+
+// ── Drop zone ─────────────────────────────────────────────────
+function dzClick(e){ if(hasImg) return; document.getElementById('file-in').click() }
+function dzDrag(e,on){ e.preventDefault(); document.getElementById('dropzone').classList.toggle('drag',on) }
+function dzDrop(e){
+  e.preventDefault(); document.getElementById('dropzone').classList.remove('drag');
+  const f = e.dataTransfer.files[0];
+  if(f && f.type.startsWith('image/')) loadFile(f);
+}
+function fileChosen(e){ const f=e.target.files[0]; if(f) loadFile(f) }
+function loadFile(f){
+  imgFile = f;
+  const r = new FileReader();
+  r.onload = ev => showPreview(ev.target.result);
+  r.readAsDataURL(f);
+}
+function showPreview(src){
+  const img = document.getElementById('prev-img');
+  const ph  = document.getElementById('dz-ph');
+  const dz  = document.getElementById('dropzone');
+  img.src=src; img.style.display='block';
+  ph.style.display='none'; dz.classList.add('has-img'); hasImg=true;
+  document.getElementById('btn-det').disabled=false;
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loading').classList.remove('show');
+}
+
+// ── Camera ────────────────────────────────────────────────────
+async function openCam(){
+  document.getElementById('cam-overlay').classList.add('open');
+  await startStream();
+}
+async function startStream(){
+  if(stream) stream.getTracks().forEach(t=>t.stop());
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      video:{ facingMode:facing, width:{ideal:1280}, height:{ideal:960} }
+    });
+    document.getElementById('cam-video').srcObject = stream;
+  } catch(e){
+    alert('Tidak dapat akses kamera:\n'+e.message);
+    closeCam();
+  }
+}
+function flipCam(){ facing = facing==='environment'?'user':'environment'; startStream() }
+function closeCam(){
+  if(stream){ stream.getTracks().forEach(t=>t.stop()); stream=null; }
+  document.getElementById('cam-overlay').classList.remove('open');
+}
+function snap(){
+  const v = document.getElementById('cam-video');
+  const c = document.getElementById('snap-canvas');
+  c.width=v.videoWidth; c.height=v.videoHeight;
+  c.getContext('2d').drawImage(v,0,0);
+  const url = c.toDataURL('image/jpeg',.92);
+  // Convert dataURL to File for API
+  c.toBlob(b => { imgFile = new File([b],'snap.jpg',{type:'image/jpeg'}) },'image/jpeg',.92);
+  closeCam(); showPreview(url);
+}
+
+// ── Detection ─────────────────────────────────────────────────
+async function detect(){
+  if(!hasImg) return;
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loading').classList.add('show');
+  document.getElementById('btn-det').disabled=true;
+
+  const apiUrl = getApiUrl();
+
+  if(apiUrl){
+    await detectReal(apiUrl);
+  } else {
+    await detectDemo();
+  }
+}
+
+async function detectReal(apiUrl){
+  const steps=['Mengunggah gambar...','Preprocessing 224×224...','Inferensi '+model+'...','Menghitung probabilitas...','Menyiapkan hasil...'];
+  const ltxt=document.getElementById('load-txt'), lstep=document.getElementById('load-step');
+  ltxt.textContent='Mengirim ke server...';
+
+  try {
+    const fd = new FormData();
+    fd.append('file', imgFile);
+    fd.append('model', model);
+
+    for(let i=0;i<steps.length;i++){
+      lstep.textContent=steps[i];
+      await delay(200);
+    }
+
+    const res  = await fetch(apiUrl+'/predict', { method:'POST', body:fd });
+    const data = await res.json();
+    // data: { class_idx, class_name, confidence, probabilities:[...10 floats] }
+    showResult({ classIdx:data.class_idx, confidence:data.confidence, probabilities:data.probabilities });
+  } catch(e){
+    document.getElementById('loading').classList.remove('show');
+    document.getElementById('btn-det').disabled=false;
+    alert('Gagal konek ke API:\n'+e.message+'\n\nPastikan server Colab masih jalan dan URL benar.');
+  }
+}
+
+async function detectDemo(){
+  const steps=['Memproses gambar...','Preprocessing 224×224...','Inferensi '+model+'...','Menghitung probabilitas...','Menyiapkan hasil...'];
+  const ltxt=document.getElementById('load-txt'), lstep=document.getElementById('load-step');
+  for(const s of steps){ ltxt.textContent=s; lstep.textContent=''; await delay(350) }
+  // Simulasi hasil
+  const topIdx  = Math.floor(Math.random()*DB.length);
+  const topConf = .72 + Math.random()*.25;
+  const probs   = DB.map((_,i) => i===topIdx ? topConf : Math.random()*(1-topConf));
+  const sum     = probs.reduce((a,b)=>a+b,0);
+  showResult({ classIdx:topIdx, confidence:probs[topIdx]/sum, probabilities:probs.map(p=>p/sum) });
+}
+
+function showResult(data){
+  document.getElementById('loading').classList.remove('show');
+  const d   = DB[data.classIdx];
+  const pct = Math.round(data.confidence*100);
+
+  document.getElementById('res-name').textContent = d.label;
+  document.getElementById('res-name').className   = 'res-name '+(d.healthy?'healthy':'disease');
+  document.getElementById('res-model').textContent= 'Model: '+(model==='resnet50'?'ResNet50':'MobileNetV2');
+  document.getElementById('res-pct').textContent  = pct+'%';
+  document.getElementById('res-pct').className    = 'res-pct '+(pct>=80?'hi':pct>=60?'md':'lo');
+  document.getElementById('res-info').innerHTML   = d.info;
+
+  setTimeout(()=>{
+    const f=document.getElementById('res-fill');
+    f.style.width=pct+'%';
+    f.style.background = pct>=80
+      ? 'linear-gradient(90deg,var(--sage),var(--leaf))'
+      : pct>=60 ? 'linear-gradient(90deg,#9a6e00,var(--gold))'
+      : 'linear-gradient(90deg,#8b1e14,var(--tomato-lt))';
+  },100);
+
+  const sorted = data.probabilities
+    .map((p,i)=>({i,p}))
+    .sort((a,b)=>b.p-a.p);
+
+  const list = document.getElementById('prob-list');
+  list.innerHTML='';
+  sorted.forEach(({i,p},rank)=>{
+    const top  = rank===0;
+    const pctI = Math.round(p*100);
+    const row  = document.createElement('div');
+    row.className='prob-row';
+    row.innerHTML=`
+      <div class="prob-lbl ${top?'top':''}">${DB[i].label}</div>
+      <div class="prob-track"><div class="prob-fill ${top?'top-bar':'other'}" style="width:0" data-w="${pctI}"></div></div>
+      <div class="prob-pct ${top?'top':''}">${pctI}%</div>`;
+    list.appendChild(row);
+  });
+  setTimeout(()=>{
+    list.querySelectorAll('.prob-fill').forEach(el=>{ el.style.width=el.dataset.w+'%' });
+  },150);
+
+  document.getElementById('result').classList.add('show');
+  document.getElementById('btn-det').disabled=false;
+  document.getElementById('result').scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+function reset(){
+  hasImg=false; imgFile=null;
+  document.getElementById('prev-img').style.display='none';
+  document.getElementById('prev-img').src='';
+  document.getElementById('dz-ph').style.display='block';
+  document.getElementById('dropzone').classList.remove('has-img');
+  document.getElementById('result').classList.remove('show');
+  document.getElementById('loading').classList.remove('show');
+  document.getElementById('btn-det').disabled=true;
+  document.getElementById('file-in').value='';
+  document.getElementById('res-fill').style.width='0';
+}
+
+const delay = ms => new Promise(r=>setTimeout(r,ms));
+</script>
+</body>
+</html>
